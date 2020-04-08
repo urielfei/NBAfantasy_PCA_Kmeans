@@ -24,14 +24,18 @@ class Nba:
                          'STL': 'STL', 'BLK': 'BLK', 'TOV': 'TOV'}
         features = ['PLAYER_NAME', 'GP', 'FG_PCT', 'BLK', 'REB', 'STL', 'PTS', 'TOV', 'AST', 'FT_PCT', 'FG3M']
         df = self.raw_df[features].rename(features_dict, axis='columns')
+        df = df[df['GAMES'] >= 20]
+
         names = df["Player"]
         x = df.set_index('Player')
+
         x['3PTS'] = x['3PTS'] / x['GAMES']
         x['PTS'] = x['PTS'] / x['GAMES']
         x['REB'] = x['REB'] / x['GAMES']
         x['STL'] = x['STL'] / x['GAMES']
         x['BLK'] = x['BLK'] / x['GAMES']
         x['TOV'] = x['TOV'] / x['GAMES'] * -1
+
         df = x.drop('GAMES', axis=1)
         sc = StandardScaler()
         sc.fit(df)
@@ -174,28 +178,31 @@ obj.create_data_pca()
 obj.create_data_Kmeans(5)
 obj.pca()
 
+####################
+
+K_groups_data = obj.df_groups[['z','Group']]
+groups = K_groups_data.groupby(['Group'])
+
+for key, group in groups:
+    print(key)
+    print(groups.get_group(key).head())
+
+print(K_groups_data.groupby(['Group']).mean())
+####################
 xs = obj.pca_score[:, 0]
 ys = obj.pca_score[:, 1]
 df = pd.DataFrame(dict(x=xs, y=ys, label=obj.groups))
 groups = df.groupby(df.label)
 
-#scale_x = 1.0 / (xs.max() - xs.min())
-#scale_y = 1.0 / (ys.max() - ys.min())
-
 fig, ax = plt.subplots()
-#ax.scatter(xs, ys, s=8, c='darkblue')
+
 for name, group in groups:
-    ax.plot(group.x, group.y
-            , marker='o'
-            , linestyle=''
-            # , ms=12
-            , label=name
-            )
+    ax.plot(group.x, group.y, marker='o', linestyle='', label=name)
+
 ax.legend()
 centers = obj.centers
 plt.scatter(centers[:, 0], centers[:, 1], c='black', s=200, alpha=0.5);
-ax.set_xlim([-3,3])
-ax.set_ylim([-3,3])
 
-plt.savefig('aa.png')
+#plt.savefig('aa.png')
 
+plt.show()
